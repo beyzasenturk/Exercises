@@ -25,10 +25,10 @@ Yaratacağınız data.frame nesnesinin sütun isimleri Excel'de bulunan değişk
 ```{r}
 # Excel dosyasındaki ham verileri data.frame formatında R'a ithal edin
 # havaK <- 
-#<install.packages("readxl") 
-#library(readxl)
-#havaK <- read_excel("C:\\bys\\havaK.xlsx")
-#head(havaK, n = 10)>
+install.packages("readxl") 
+library(readxl)
+havaK <- read_excel("C:\\bys\\havaK.xlsx")
+head(havaK, n = 10)
 ```
 
 ## Egzersiz 2 - Veri Kalite Kontrolü
@@ -36,24 +36,36 @@ Yaratacağınız data.frame nesnesinin sütun isimleri Excel'de bulunan değişk
 ### Zaman sütunu
 Zaman değerlerini içeren sütunun isminin **Time** olmasını sağlayın
 ```{r}
-#  <colnames(havaK)[1] <- "Time">
+colnames(havaK)[1] <- "Time"
 ```
 
 
 *havaK$Time* adlı değişkendeki bütün verilerin **POSIXct** tipinde olmasını sağlayın. 
 
 ```{r}
-# <install.packages("lubridate")
-#library(lubridate)
-#havaK$Time <- ymd_hms(havaK$Time)>
+install.packages("lubridate")
+library(lubridate)
+havaK$Time <- ymd_hms(havaK$Time)
+class(havaK$Time)
 ```
 
 *Time* sütunu dışındaki bütün sütunların tipinin **numeric** olmasını sağlayın. *havaK* nesnesinin ilk 10 satırının raporda gözükmesini sağlayın.
 
 ```{r}
-# <havaK[, -1] <- lapply(havaK[, -1], function(x) as.numeric(gsub(",", ".", x)))
-#havaK[, -1] <- lapply(havaK[, -1], as.numeric)>
+#havaK[, -1] <- lapply(havaK[, -1], function(x) as.numeric(gsub(",", ".", x)))
+#havaK[, -1] <- lapply(havaK[, -1], as.numeric)
 
+havaK[-which(names(havaK) == "Time")] <- lapply(havaK[-which(names(havaK) == "Time")], function(x) {  
+  # Sayısal olmayan karakterleri ve boşlukları temizle    
+  x <- gsub("[^0-9,]", "", x)  
+  # Ondalık ayırıcıları noktaya çevir  
+  #- olanları boş yapalım ki NA çevrilsin    
+  x <- gsub("-", "", x)  
+  x <- gsub(",", ".", x)  
+  # Sayısal değerlere dönüştür  
+  as.numeric(x)
+  })
+head(havaK, 10)
 ```
 
 ## Egzersiz 3 - Veri Görselleme
@@ -64,6 +76,19 @@ Zaman değerlerini içeren sütunun isminin **Time** olmasını sağlayın
 
 ```{r}
 library(dygraphs)
-#  < install.packages("dygraphs")
-#library(dygraphs)>
+install.packages("xts")
+library
+colnames(havaK)[2] <- "PM10"
+colnames(havaK)[3] <- "SO2"
+havaK$Time[is.na(havaK$Time)] <- 0
+havaK_xts <- xts(havaK[, c(2, 3)], order.by= havaK$Time)
+  # Oluşturulan xts nesnesi için dygraph oluşturma
+  dygraph(havaK_xts) %>%
+  #Sırası ile renkler  
+  dyOptions(colors = c("blue", "red")) %>%
+  #Sol  
+  dyAxis("y", label = "PM 10 ( µg/m3 )") %>%
+  #Sağ  
+  dyAxis("y2", label = "SO2 ( µg/m3 )", independentTicks = TRUE) %>%
+  dySeries(names(havaK_xts)[2], axis = 'y2')
 ```
